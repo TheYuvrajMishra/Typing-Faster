@@ -1,0 +1,602 @@
+<!DOCTYPEgit add . html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="favicon-32x32.png" type="image/x-icon">
+    <title>Minimal Typing Practices</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #121212;
+            color: #E0E0E0;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        #hackerCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+
+        #typewriter::after {
+            content: '|';
+            display: inline-block;
+            margin-left: 5px;
+            animation: blink 0.7s infinite;
+            background-color: #E0E0E0;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        #session-selector {
+            margin-bottom: 20px;
+            background-color: rgba(0, 24, 0, 0.757);
+            padding: 2px;
+            border-radius: 25px;
+            border-right: 1px solid rgb(255, 255, 255);
+            border-left: 1px solid rgb(255, 255, 255);
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+        #session-selector button {
+            margin: 0 5px;
+            padding: 8px 16px;
+            background-color: rgba(255, 255, 255, 0.12);
+            backdrop-filter:blur(5px);
+            color: #ffffff;
+            border-right: 1px solid rgb(255, 255, 255);
+            border-left: 1px solid rgb(255, 255, 255);
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+        }
+        #session-selector button:hover {
+            background-color: #00ff223e;
+        }
+        #text-display {
+            width: 95%;
+            max-width: 95%;
+            margin-bottom: 20px;
+            margin-top: 40px;
+            letter-spacing: -2px;
+            font-size: 25px;
+            text-align: center;
+            color: #727272;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.52);
+            backdrop-filter:blur(5px);
+            border-right: 1px solid rgb(255, 255, 255);
+            border-left: 1px solid rgb(255, 255, 255);
+            border-radius: 20px;
+            box-shadow: 0px 0px 30px rgb(0, 0, 0);
+            transition: all 0.5s ease;
+        }
+        #text-display:hover{
+            backdrop-filter:blur(1px);
+        }
+        #text-display span.correct {
+            color: #4CAF50;
+        }
+        #text-display span.incorrect {
+            color: #F44336;
+        }
+        #typing-input {
+            width: 80%;
+            max-width: 800px;
+            font-size: 16px;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #1F1F1F;
+            color: #E0E0E0;
+            border: none;
+            outline: none;
+            opacity: 0;
+        }
+        #metrics {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .metric {
+            font-size: 16px;
+        }
+        #restart-btn {
+            padding: 8px;
+            background-color: #4c4c4c;
+            color: #121212;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            overflow: hidden;
+            opacity: 0;
+        }
+
+        #restart-btn img {
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+            filter: brightness(1);
+            filter: saturate(0);
+            filter: drop-shadow(1px 1px 0 rgb(255, 242, 0))
+            drop-shadow(-1px -1px 0 rgb(255, 242, 0));
+            opacity: 0;
+        }
+        #restart-btn:hover {
+            background-color: #1c1c1c;
+        }
+        #results {
+            margin-top: 20px;
+            font-size: 18px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        #results.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #countdown {
+            font-size: 18px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .reward-message {
+            font-size: 24px;
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: center;
+            color: white;
+            overflow: hidden;
+            position: relative;
+            display: inline-block;
+            white-space: nowrap;
+            border-radius: 25px;
+            padding: 10px;
+            background-color: #003502c8;
+            border-right: 1px solid white;
+            border-left: 1px solid white;
+        }
+
+        /* Left and Right Panels for Unveiling */
+        .reward-message::before,
+        .reward-message::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background-color: #003502c8;
+            z-index: 2;
+        }
+
+        .reward-message::before {
+            left: 0;
+            animation: panel-left-unveil 1.5s ease-in-out forwards;
+        }
+
+        .reward-message::after {
+            right: 0;
+            animation: panel-right-unveil 1.5s ease-in-out forwards;
+        }
+
+        /* Animation for Left Panel */
+        @keyframes panel-left-unveil {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        /* Animation for Right Panel */
+        @keyframes panel-right-unveil {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        /* Text Reveal */
+        .reward-message span {
+            display: inline-block;
+            opacity: 0;
+            animation: text-fade-in 1s ease-in-out 1.5s forwards;
+        }
+
+        @keyframes text-fade-in {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes blink {
+            0% {
+                border-left: 1px solid white;
+            }
+            50% {
+                border-left: 1px solid transparent;  /* Make the border disappear */
+            }
+            100% {
+                border-left: 1px solid white;
+            }
+        }
+
+        .cursor-blink {
+            animation: blink 0.5s step-end infinite;
+        }
+
+        @media (max-width: 600px) {
+        body{
+            overflow: auto;
+        }
+        #text-display {
+            font-size: 1rem;
+            line-height: 1.4;
+            margin: 10px 0;
+            width: 80%;
+        }
+
+        #typing-input {
+            font-size: 0.9rem;
+            padding: 8px;
+        }
+        #session-selector{
+            width: 70%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        #session-selector button {
+            font-size: 0.9rem;
+            padding: 8px 8px;
+        }
+
+        #countdown {
+            font-size: 1rem;
+        }
+
+        #results {
+            font-size: 1rem;
+        }
+}
+    </style>
+</head>
+<body>
+    <canvas id="hackerCanvas"></canvas>
+    <strong><h1 id="typewriter" style="font-size: 50px;"></h1></strong>
+    <div id="session-selector">
+        <span>Select Session Time:</span>
+        <button data-time="15">15s</button>
+        <button data-time="30">30s</button>
+        <button data-time="60">60s</button>
+    </div>
+    <div id="countdown">Time Left: 0s</div>
+    <div id="text-displayy"></div>
+    <div id="text-display"></div>
+    <textarea id="typing-input" placeholder="Start typing..." disabled></textarea>
+    <button id="restart-btn"><img src="refresh.png"></button>
+    <div id="results"></div>
+
+    <script>
+     // Hacker Background Effect
+     const canvas = document.getElementById('hackerCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890@#$%^&*()*&^%';
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00FF00';
+            ctx.font = `${fontSize}px monospace`;
+
+            drops.forEach((y, index) => {
+                const text = letters.charAt(Math.random() * letters.length);
+                const x = index * fontSize;
+                ctx.fillText(text, x, y * fontSize);
+                if (y * fontSize > canvas.height && Math.random() > 0.975) drops[index] = 0;
+                drops[index]++;
+            });
+        }
+
+        setInterval(draw, 33);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+const textDisplay = document.getElementById('text-display');
+const typingInput = document.getElementById('typing-input');
+const restartBtn = document.getElementById('restart-btn');
+const sessionButtons = document.querySelectorAll('#session-selector button');
+const resultsDiv = document.getElementById('results');
+const countdownDisplay = document.getElementById('countdown');
+
+let text = "";
+let timer, interval, startTime;
+let correctChars = 0, totalChars = 0, sessionDuration = 0;
+
+ // Fetch random text
+// Set the random paragraph to be typed
+function setRandomParagraph() {
+    const paragraphs = [
+        "The sun rises slowly in the east, casting a golden glow over the city. The streets are quiet, with only the occasional sound of a car passing by. People begin their day, heading to work or school, while the birds sing their morning songs. The air is fresh and cool, and there's a sense of calm before the hustle and bustle of the day begins. As the sun climbs higher, the temperature rises, and the city wakes up fully. The noise and activity of the day begin, with people rushing to their destinations, making their way through busy streets and crowded public transport. The city is alive, full of energy and movement. At night, the streets become quieter again, and the lights of the city shine brightly. It's a never-ending cycle, a rhythm that defines the life of the city.",
+        "Learning is an important part of life. It allows us to grow, develop new skills, and understand the world around us. Education is the key to success in many fields, and it can open doors to new opportunities. Whether we learn through formal education, reading books, or gaining experience, learning is a lifelong process. The more we learn, the more we realize how much there is still to discover. Every new piece of information we acquire helps us make better decisions and become more knowledgeable. In addition to gaining knowledge, learning also helps build confidence and encourages critical thinking. It's an essential part of personal development and contributes to our overall well-being.",
+        "Technology has become an integral part of modern life. We use it every day for communication, entertainment, and work. Smartphones, computers, and the internet have revolutionized the way we live and interact with others. We can now connect with people across the globe, access vast amounts of information, and perform tasks more efficiently. However, technology also brings challenges, such as concerns over privacy, addiction, and the impact on social interactions. As technology continues to advance, it's important to find a balance between its benefits and potential drawbacks. We must learn to use it responsibly and ensure it enhances our lives rather than detracts from them.",
+        "Traveling is one of the most exciting experiences a person can have. It allows us to explore new places, learn about different cultures, and meet new people. Whether it's a trip to a nearby town or an international adventure, traveling broadens our horizons and enriches our lives. It can also be a great way to relax and unwind, taking a break from the daily routine. The experiences gained from traveling often leave lasting memories, and the stories we share with others help to inspire future journeys. Traveling encourages a sense of curiosity and a desire to discover more about the world around us.",
+        "Exercise is essential for maintaining good health. It helps strengthen the body, improve cardiovascular health, and boost mental well-being. Regular physical activity has been shown to reduce the risk of chronic diseases such as heart disease, diabetes, and obesity. It also improves sleep, enhances mood, and increases energy levels. Exercise doesn't have to mean intense workouts at the gym; even activities like walking, swimming, or yoga can provide significant benefits. It's important to find a type of exercise that you enjoy and can incorporate into your daily routine. Consistency is key, and even small amounts of exercise can have a positive impact on overall health.",
+        "Food is an essential part of life, and it plays a significant role in our health and well-being. A balanced diet provides the nutrients and energy our bodies need to function properly. Eating a variety of foods from different food groups, such as fruits, vegetables, grains, and proteins, ensures that we get the necessary vitamins and minerals. It's also important to stay hydrated by drinking plenty of water. In addition to its nutritional value, food also has cultural significance, bringing people together to share meals and traditions. Eating mindfully and in moderation can help maintain a healthy weight and prevent chronic illnesses.",
+        "Nature is one of the most beautiful aspects of our world. From towering mountains to vast oceans, the natural environment offers endless opportunities for exploration and enjoyment. Spending time outdoors can improve mental health, reduce stress, and promote physical activity. Whether it's hiking through a forest, relaxing by a beach, or simply enjoying a walk in the park, nature has a calming effect that helps restore balance in our lives. It's important to protect the environment to ensure future generations can experience the beauty of nature. Taking steps to reduce pollution, conserve resources, and protect wildlife is essential for preserving our planet.",
+        "Art is an expression of creativity and imagination. It comes in many forms, including painting, sculpture, music, dance, and literature. Throughout history, art has been used to communicate ideas, evoke emotions, and reflect the values of different cultures. It allows individuals to express themselves and connect with others on a deeper level. Art can inspire, challenge, and provoke thought, offering new perspectives on the world. Whether it's a painting in a gallery or a song played on the radio, art has the power to influence our thoughts and actions. It's an essential part of human culture and a testament to the creativity of the human spirit.",
+        "Friendship is one of the most valuable aspects of life. It provides companionship, support, and a sense of belonging. True friends are there for us during both good times and bad, offering comfort, advice, and encouragement. They share our joys and help us navigate challenges. Building strong friendships requires trust, communication, and mutual respect. It's important to invest time and effort in maintaining friendships, as they contribute to our happiness and emotional well-being. A good friend is someone who accepts us for who we are and supports us in our personal growth. Friendships enrich our lives and make the world a better place.",
+        "Time management is a critical skill for success. In today's fast-paced world, it's easy to become overwhelmed by the demands of work, school, and personal responsibilities. Effective time management helps prioritize tasks, reduce stress, and increase productivity. By setting goals, creating schedules, and avoiding distractions, we can make the most of our time and achieve our objectives. It's also important to take breaks and allow time for relaxation to prevent burnout. Learning how to manage time effectively is an ongoing process, but it pays off in the long run by allowing us to accomplish more and live a more balanced life."
+    ];
+    const randomParagraph = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+    text = randomParagraph; // Set random paragraph to text
+    renderText(); // Render the text on the page
+}
+
+// Initialize app and set the random paragraph
+document.addEventListener('DOMContentLoaded', () => {
+    setRandomParagraph(); // Fetch and display random paragraph on page load
+});
+
+
+function renderText() {
+    textDisplay.innerHTML = text.split('').map(char => `<span>${char}</span>`).join('');
+    typingInput.value = "";
+    typingInput.disabled = true;
+}
+
+// Start the typing session
+function startSession(duration) {
+    clearInterval(interval);
+    typingInput.disabled = false;
+    typingInput.value = "";
+    resultsDiv.classList.remove('show');
+    countdownDisplay.style.display = 'block';
+    countdownDisplay.innerText = `Time Left: ${duration}s`;
+
+    sessionDuration = duration;
+    startTime = Date.now();
+    correctChars = 0;
+    totalChars = 0;
+
+    interval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const timeLeft = sessionDuration - elapsed;
+        countdownDisplay.innerText = `Time Left: ${timeLeft}s`;
+
+        if (timeLeft <= 0) {
+            endSession();
+        }
+    }, 1000);
+
+    typingInput.focus();
+}
+
+// Highlight text while typing
+// Add Typing Sound
+const typingSound = new Audio('02.mp3');
+typingSound.volume = 0.5; // Adjust volume (0.0 to 1.0)
+
+// Play sound on typing
+function playTypingSound() {
+    if (typingSound.paused) {
+        typingSound.currentTime = 0; // Restart sound if paused
+        typingSound.play();
+    }
+}
+
+// Modify highlightText function to include typing sound
+function highlightText() {
+    const inputText = typingInput.value;
+    const textSpans = textDisplay.querySelectorAll('span');
+    correctChars = 0;
+    totalChars = inputText.length;
+
+    // Reset text spans
+    textSpans.forEach(span => {
+        span.className = '';
+        span.style.backgroundColor = '';
+        span.style.borderLeft = '';
+        span.classList.remove('cursor-blink');
+    });
+
+    // Highlight text and play typing sound
+    for (let i = 0; i < textSpans.length; i++) {
+        if (i < inputText.length) {
+            if (inputText[i] === text[i]) {
+                textSpans[i].className = 'correct';
+                correctChars++;
+            } else {
+                textSpans[i].className = 'incorrect';
+            }
+        }
+    }
+
+    // Add blinking cursor
+    if (inputText.length < textSpans.length) {
+        textSpans[inputText.length].style.borderLeft = '1px solid white';
+        textSpans[inputText.length].classList.add('cursor-blink');
+    }
+
+    // Play typing sound
+    playTypingSound();
+}
+
+// Stop typing sound when typing stops
+typingInput.addEventListener('keyup', () => {
+    setTimeout(() => typingSound.pause(), 200);
+});
+
+
+
+// Calculate WPM and Accuracy
+// Calculate WPM based on words rather than characters
+// Calculate WPM and Accuracy
+function endSession() {
+    typingInput.disabled = true;
+    clearInterval(interval);
+
+    const elapsedTime = (Date.now() - startTime) / 1000 / 60; // Time in minutes
+    const inputText = typingInput.value.trim(); // Remove leading/trailing spaces
+    const typedWords = inputText.split(/\s+/).filter(word => word.length > 0).length; // Count non-empty words
+
+    let wpm = 0; // Default WPM is 0 if no valid input
+    let accuracy = 0;
+
+    if (typedWords > 0 && elapsedTime > 0) {
+        wpm = Math.round(typedWords / elapsedTime);
+        accuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 0;
+    }
+
+    resultsDiv.innerHTML = `
+        <div>Session Complete!</div>
+        <div class='reward-message'>WPM: ${wpm}, Accuracy: ${accuracy}%</div>
+    `;
+    resultsDiv.classList.add('show');
+
+    countdownDisplay.style.display = 'none';
+}
+
+
+
+// Restart session
+// Restart on Button Click
+restartBtn.addEventListener('click', () => {
+    clearInterval(interval);
+    typingInput.disabled = true;
+    countdownDisplay.style.display = 'none';
+    resultsDiv.classList.remove('show');
+    setRandomParagraph();
+});
+
+// Start the typing session with keypress
+document.addEventListener('keydown', (event) => {
+    if (['1', '2', '3'].includes(event.key)) {
+        event.preventDefault(); // Prevent the key from being registered in the input
+        typingInput.value = ''; // Clear any unintended input
+
+        switch (event.key) {
+            case '1':
+                startSession(15); // Start 15s session
+                break;
+            case '2':
+                startSession(30); // Start 30s session
+                break;
+            case '3':
+                startSession(60); // Start 60s session
+                break;
+        }
+    } else if (event.key === 'Enter') {
+        clearInterval(interval);
+        typingInput.disabled = true;
+        countdownDisplay.style.display = 'none';
+        resultsDiv.classList.remove('show');
+        setRandomParagraph();
+    }
+});
+
+
+// Session time buttons
+sessionButtons.forEach(button => {
+    button.addEventListener('click', () => startSession(parseInt(button.dataset.time)));
+});
+
+// Typing event listener
+typingInput.addEventListener('input', highlightText);
+
+function typeWriterEffect(text, elementId, typeSpeed = 90, mistakeChance = 0.2, correctionPause = 500) {
+    const element = document.getElementById(elementId);
+    let index = 0;
+    let displayedText = '';
+    let makingMistake = false;
+
+    function getRandomChar() {
+        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        return chars[Math.floor(Math.random() * chars.length)];
+    }
+
+    function type() {
+        if (index < text.length) {
+            if (!makingMistake && Math.random() < mistakeChance) {
+                // Make a random mistake
+                displayedText += getRandomChar();
+                element.textContent = displayedText;
+                makingMistake = true;
+
+                setTimeout(() => {
+                    // Simulate correcting the mistake
+                    displayedText = displayedText.slice(0, -1); // Remove wrong char
+                    element.textContent = displayedText;
+                    setTimeout(type, typeSpeed);
+                    makingMistake = false;
+                }, correctionPause);
+            } else {
+                // Normal typing
+                displayedText += text[index];
+                element.textContent = displayedText;
+                index++;
+                setTimeout(type, typeSpeed);
+            }
+        } else {
+            // Restart the typing effect after delay
+            setTimeout(() => {
+                index = 0;
+                displayedText = '';
+                element.textContent = '';
+                type();
+            }, 2000); // Delay before restarting
+        }
+    }
+
+    element.textContent = ''; // Clear the element before typing
+    type();
+}
+
+// Start the typewriter effect when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    typeWriterEffect('Typing Faster', 'typewriter', 100, 0.15, 400);
+});
+
+// Initialize app
+fetchRandomText();
+
+
+    </script>
+</body>
+</html>
+
